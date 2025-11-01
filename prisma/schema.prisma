@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id             Int        @id @default(autoincrement())
+  wallet_address String     @unique
+  username       String?
+  avatar_id      Int?
+  premium        Boolean    @default(false)
+  created_at     DateTime   @default(now())
+  avatar         Avatar?    @relation(fields: [avatar_id], references: [id])
+  gamesHosted    Game[]     @relation("HostUser")
+  gamesWon       Game[]     @relation("WinnerUser")
+  gamePlayers    GamePlayer[]
+  payments       Payment[]
+  answers        Answer[]
+  leaderboards   Leaderboard[]
+  achievements   Achievement[]
+  eventLogs      EventLog[]
+  predictionPoolsWon  PredictionPool[]
+  predictionsMade     Prediction[]  @relation("PredictorUser")
+  predictionsReceived Prediction[]  @relation("PredictedPlayer")
+}
+
+model Avatar {
+  id           Int       @id @default(autoincrement())
+  name         String?
+  image_url    String?
+  nft_token_id String?
+  available    Boolean   @default(true)
+  users        User[]
+}
+
+model Game {
+  id              Int        @id @default(autoincrement())
+  mode            String
+  room_code       String?    @unique
+  status          String
+  entry_fee       Decimal?
+  pool_amount     Decimal?
+  platform_fee    Decimal?
+  player_count    Int?
+  host_user_id    Int?
+  host_funded     Boolean    @default(false)
+  host_funded_tx_hash String?
+  winner_user_id  Int?
+  tokens_sent     Boolean    @default(false)
+  fee_deducted    Boolean    @default(false)
+  created_at      DateTime   @default(now())
+  started_at      DateTime?
+  finished_at     DateTime?
+  hostUser        User?      @relation("HostUser", fields: [host_user_id], references: [id])
+  winnerUser      User?      @relation("WinnerUser", fields: [winner_user_id], references: [id])
+  payments        Payment[]
+  gamePlayers     GamePlayer[]
+  gameRounds      GameRound[]
+  eventLogs       EventLog[]
+  predictionPool  PredictionPool?
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  game_id     Int?
+  user_id     Int?
+  amount      Decimal?
+  tx_hash     String?
+  confirmed   Boolean  @default(false)
+  type        String?
+  created_at  DateTime @default(now())
+  game        Game?    @relation(fields: [game_id], references: [id])
+  user        User?    @relation(fields: [user_id], references: [id])
+}
+
+model GamePlayer {
+  id              Int      @id @default(autoincrement())
+  game_id         Int?
+  user_id         Int?
+  status          String?
+  funded          Boolean  @default(false)
+  funded_tx_hash  String?
+  join_time       DateTime @default(now())
+  elimination_time DateTime?
+  final_correct   Int      @default(0)
+  final_time_ms   Int      @default(0)
+  game            Game?    @relation(fields: [game_id], references: [id])
+  user            User?    @relation(fields: [user_id], references: [id])
+}
+
+model Question {
+  id             Int      @id @default(autoincrement())
+  category       String?
+  difficulty     String?
+  question_text  String?
+  options        Json?
+  correct_option String?
+  hash           String?
+  times_used     Int      @default(0)
+  last_used_at   DateTime?
+  created_at     DateTime @default(now())
+  gameRounds     GameRound[]
+}
+
+model GameRound {
+  id          Int      @id @default(autoincrement())
+  game_id     Int?
+  round_number Int?
+  question_id Int?
+  started_at  DateTime?
+  finished_at DateTime?
+  game        Game?    @relation(fields: [game_id], references: [id])
+  question    Question? @relation(fields: [question_id], references: [id])
+  answers     Answer[]
+}
+
+model Answer {
+  id                    Int      @id @default(autoincrement())
+  round_id              Int?
+  user_id               Int?
+  selected_option       String?
+  is_correct            Boolean?
+  answer_time_ms        Int?
+  submitted_at          DateTime @default(now())
+  tab_change_detected   Boolean  @default(false)
+  fullscreen_exited     Boolean  @default(false)
+  round                 GameRound? @relation(fields: [round_id], references: [id])
+  user                  User?      @relation(fields: [user_id], references: [id])
+}
+
+model Leaderboard {
+  id              Int      @id @default(autoincrement())
+  user_id         Int?     @unique
+  total_wins      Int      @default(0)
+  total_games     Int      @default(0)
+  total_streak    Int      @default(0)
+  total_earnings  Decimal  @default(0)
+  user            User?    @relation(fields: [user_id], references: [id])
+}
+
+model Achievement {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  type        String?
+  unlocked_at DateTime @default(now())
+  user        User?    @relation(fields: [user_id], references: [id])
+}
+
+model EventLog {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  game_id     Int?
+  event_type  String?
+  details     Json?
+  occurred_at DateTime @default(now())
+  user        User?    @relation(fields: [user_id], references: [id])
+  game        Game?    @relation(fields: [game_id], references: [id])
+}
+
+model PredictionPool {
+  id                      Int         @id @default(autoincrement())
+  game_id                 Int         @unique
+  blockchain_game_id      String?
+  opened_at               DateTime    @default(now())
+  closed_at               DateTime?
+  settled_at              DateTime?
+  total_pool_amount       Decimal     @default(0)
+  winner_player_id        Int?
+  winner_reward_amount    Decimal?
+  prediction_pool_amount  Decimal?
+  settled                 Boolean     @default(false)
+  settlement_tx_hash      String?
+  game                    Game        @relation(fields: [game_id], references: [id])
+  winnerPlayer            User?       @relation(fields: [winner_player_id], references: [id])
+  predictions             Prediction[]
+}
+
+model Prediction {
+  id                    Int             @id @default(autoincrement())
+  prediction_pool_id    Int
+  predictor_user_id     Int
+  predicted_player_id   Int
+  amount                Decimal         @default(1)
+  blockchain_tx_hash    String?
+  is_correct            Boolean         @default(false)
+  payout_amount         Decimal?
+  claimed               Boolean         @default(false)
+  claimed_tx_hash       String?
+  created_at            DateTime        @default(now())
+  predictionPool        PredictionPool  @relation(fields: [prediction_pool_id], references: [id])
+  predictor             User            @relation("PredictorUser", fields: [predictor_user_id], references: [id])
+  predictedPlayer       User            @relation("PredictedPlayer", fields: [predicted_player_id], references: [id])
+}

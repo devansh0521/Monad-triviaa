@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm run prisma:seed:*)",
+      "Bash(pnpm run import:questions:*)",
+      "Bash(npx hardhat test)",
+      "Bash(pnpm add:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(rm:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsx:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
