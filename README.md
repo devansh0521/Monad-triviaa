@@ -1,4 +1,4 @@
-🎮 MonadTrivia - Battle Royale Trivia with Prediction Markets
+#🎮 MonadTrivia - Battle Royale Trivia with Prediction Markets
 MonadTrivia is a multiplayer, real-time trivia game built on the Monad blockchain that combines intense quiz competition with a decentralized prediction market. Players compete in rapid-fire question rounds where one wrong answer means instant elimination, while spectators can earn rewards by predicting the game winner.​
 
 🌟 Key Features
